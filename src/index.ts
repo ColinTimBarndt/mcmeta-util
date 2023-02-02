@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import tar from "tar";
 
 import {SummaryData} from "./summaryData.js";
-import {Cached, CachedByString, clearAllCaches} from "./cache.js";
+import {__GAME_META_CACHE, CachedAsync, CachedByStringAsync} from "./cache.js";
 
 const TEMP = path.resolve(fileURLToPath(import.meta.url), "../../temp");
 const MAX_CACHE_MS = 2 * 60 * 60 * 1000; // 2h
@@ -23,11 +23,11 @@ export class GameMeta {
 
     static async clearCache(): Promise<void> {
         await fs.rm(TEMP, {recursive: true, force: true});
-        clearAllCaches();
+        __GAME_META_CACHE.clearAllCaches();
     }
 
-    @Cached
-    static async loadVersions(): Promise<SummaryData.VersionArray> {
+    @CachedAsync(__GAME_META_CACHE)
+    static async loadVersions(): Promise<Readonly<SummaryData.schema.VersionArray>> {
         await fs.mkdir(TEMP, {recursive: true});
         const versionsFile = path.resolve(TEMP, "versions.json");
         let stats: Stats | null;
@@ -39,7 +39,7 @@ export class GameMeta {
             } else throw e;
         }
         if (stats !== null && Date.now() - stats.mtimeMs > MAX_CACHE_MS) {
-            return SummaryData.VersionArray.parse(await fs.readFile(versionsFile));
+            return SummaryData.schema.VersionArray.parse(await fs.readFile(versionsFile));
         }
 
         await new Promise((resolve, reject) => {
@@ -54,10 +54,10 @@ export class GameMeta {
             });
         });
 
-        return SummaryData.VersionArray.parse(JSON.parse(await fs.readFile(versionsFile, "utf8")));
+        return SummaryData.schema.VersionArray.parse(JSON.parse(await fs.readFile(versionsFile, "utf8")));
     }
 
-    @CachedByString
+    @CachedByStringAsync(__GAME_META_CACHE)
     static async loadVersionSummary(version: string): Promise<SummaryData> {
         assert.match(version, /^[a-zA-Z0-9][a-zA-Z0-9_+.-]+$/);
 

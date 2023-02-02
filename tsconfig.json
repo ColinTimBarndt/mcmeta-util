@@ -15,9 +15,12 @@
     "noImplicitOverride": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
+    "isolatedModules": true
   },
   "include": [
     "src/**/*"
+  ],
+  "exclude": [
+    "dist/**/*"
   ]
 }
